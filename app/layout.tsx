@@ -21,12 +21,12 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: 'RümpelTurbo – schnelle Entrümpelung mit Fixpreis',
-    template: '%s | RümpelTurbo',
+    default: 'RÜMPELTURBO – schnelle Entrümpelung mit Fixpreis',
+    template: '%s | RÜMPELTURBO',
   },
   description:
     'Schnelle Entrümpelung für Wohnung, Haus, Keller, Dachboden & Gewerbe. Kurzfristige Termine, transparente Fixpreise, besenrein. Optional: Endreinigung. Kostenlos anfragen.',
-  applicationName: 'RümpelTurbo',
+  applicationName: 'RÜMPELTURBO',
   metadataBase: new URL('https://ruempelturbo.de'),
   alternates: { canonical: '/' },
   robots: {
@@ -41,17 +41,17 @@ export const metadata: Metadata = {
     },
   },
   openGraph: {
-    title: 'RümpelTurbo – schnelle Entrümpelung mit Fixpreis',
+    title: 'RÜMPELTURBO – schnelle Entrümpelung mit Fixpreis',
     description:
       'Wohnung • Haus • Keller • Dachboden • Gewerbe. Kurzfristig, sauber, besenrein. Optional: Endreinigung.',
     url: 'https://ruempelturbo.de',
-    siteName: 'RümpelTurbo',
+    siteName: 'RÜMPELTURBO',
     locale: 'de_DE',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'RümpelTurbo – schnelle Entrümpelung mit Fixpreis',
+    title: 'RÜMPELTURBO – schnelle Entrümpelung mit Fixpreis',
     description:
       'Kurzfristige Entrümpelung mit Fixpreis möglich. Optional Endreinigung. Kostenlos anfragen.',
   },
