@@ -15,11 +15,11 @@ export type InquiryCtx = {
 }
 
 const BRAND = {
-  name: 'RümpelTurbo',
-  websiteTitle: 'RümpelTurbo',
+  name: 'RÜMPELTURBO',
+  websiteTitle: 'RÜMPELTURBO',
   supportEmail: 'info@ruempelturbo.de',
   phone: '+4950353169998',
-  legalNote: '© RümpelTurbo • DSGVO-konform',
+  legalNote: '© RÜMPELTURBO • DSGVO-konform',
 
   accent: '#f9a727',
   bg: '#ffffff',
@@ -29,7 +29,7 @@ const BRAND = {
   muted: '#6B7280',
 }
 
-const DEFAULT_SITE_URL = 'https://ruempelturbo.de'
+const DEFAULT_SITE_URL = 'https://www.ruempelturbo.de'
 const CONTAINER_W = 640
 
 function escapeHtml(s: string) {

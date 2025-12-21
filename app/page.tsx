@@ -4,7 +4,7 @@ import Image from 'next/image'
 import InquiryForm from './components/InquiryForm'
 
 export const metadata: Metadata = {
-  title: 'RümpelTurbo – schnelle Entrümpelung mit Fixpreis | Wohnung • Haus • Gewerbe',
+  title: 'RÜMPELTURBO – schnelle Entrümpelung mit Fixpreis | Wohnung • Haus • Gewerbe',
   description:
     'Schnelle Entrümpelung für Wohnung, Haus, Keller, Dachboden & Gewerbe – kurzfristige Termine, transparente Fixpreise, besenrein. Optional: Endreinigung. Jetzt kostenlos anfragen.',
   keywords: [
@@ -22,7 +22,7 @@ export const metadata: Metadata = {
   ],
   alternates: { canonical: '/' },
   openGraph: {
-    title: 'RümpelTurbo – schnelle Entrümpelung mit Fixpreis',
+    title: 'RÜMPELTURBO – schnelle Entrümpelung mit Fixpreis',
     description:
       'Wohnung • Haus • Keller • Dachboden • Gewerbe. Kurzfristig, sauber, besenrein. Optional: Endreinigung.',
     type: 'website',
@@ -30,7 +30,7 @@ export const metadata: Metadata = {
 }
 
 const BRAND = {
-  name: 'RümpelTurbo',
+  name: 'RÜMPELTURBO',
   accent: '#f9a727',
   ink: '#0b0f19',
   phone: '+4950353169998',
@@ -262,7 +262,7 @@ export default function Home() {
                   backgroundImage: `linear-gradient(90deg, ${BRAND.accent}, ${BRAND.ink})`,
                 }}
               >
-                richtig schnell.
+                richtig schnell
               </span>{' '}
               geht.
             </h1>

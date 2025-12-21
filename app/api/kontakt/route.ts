@@ -1,4 +1,4 @@
-// src/app/api/anfrage/route.ts
+// src/app/api/kontakt/route.ts
 import { NextResponse } from 'next/server'
 import {
   getRuempelTurboCustomerSubject,
@@ -6,7 +6,7 @@ import {
   renderRuempelTurboCustomerMail,
   renderRuempelTurboInternalMail,
   RUEMPELTURBO_SUPPORT_EMAIL,
-  type InquiryCustomerType,
+  type InquiryCtx,
 } from '@/app/mails/emailTemplates'
 
 export const runtime = 'nodejs'
@@ -20,13 +20,30 @@ type SendEmailArgs = {
   replyTo?: string
 }
 
-/**
- * ✅ Resend REST API
- * ENV:
- * - RESEND_API_KEY=re_...
- * - MAIL_FROM="RümpelTurbo <no-reply@ruempelturbo.de>" (optional)
- * - NEXT_PUBLIC_SITE_URL="https://ruempelturbo.de" (optional)
- */
+function isEmailLike(v: string) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)
+}
+
+function parseBool(v: unknown) {
+  return v === true || v === 'true' || v === 'on' || v === '1' || v === 1
+}
+
+function pickStr(fd: FormData, key: string) {
+  const v = fd.get(key)
+  return typeof v === 'string' ? v.trim() : ''
+}
+
+function wantsHtmlRedirect(req: Request) {
+  const accept = req.headers.get('accept') || ''
+  return accept.includes('text/html')
+}
+
+function getSiteUrl(req: Request) {
+  const origin = (req.headers.get('origin') || '').trim()
+  const env = (process.env.NEXT_PUBLIC_SITE_URL || '').trim()
+  return (env || origin || 'https://ruempelturbo.de').trim()
+}
+
 async function sendWithResend(args: SendEmailArgs) {
   const key = process.env.RESEND_API_KEY
   if (!key) throw new Error('RESEND_API_KEY fehlt')
@@ -42,7 +59,6 @@ async function sendWithResend(args: SendEmailArgs) {
       to: args.to,
       subject: args.subject,
       html: args.html,
-      // Resend REST parameter: reply_to
       ...(args.replyTo ? { reply_to: args.replyTo } : {}),
     }),
   })
@@ -53,30 +69,32 @@ async function sendWithResend(args: SendEmailArgs) {
   }
 }
 
-function pickStr(fd: FormData, key: string) {
-  const v = fd.get(key)
-  return typeof v === 'string' ? v.trim() : ''
-}
-
-function isEmailLike(v: string) {
-  if (!v) return false
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)
-}
-
-function normalizeCustomerType(v: string): InquiryCustomerType | undefined {
-  const x = (v || '').toLowerCase().trim()
-  if (x === 'privat' || x === 'gewerbe') return x
-  return undefined
-}
-
-function wantsHtmlRedirect(req: Request) {
-  const accept = req.headers.get('accept') || ''
-  return accept.includes('text/html')
-}
-
 export async function POST(req: Request) {
+  const from = (process.env.RESEND_FROM || '').trim()
+  const toInternal = (process.env.CONTACT_TO || RUEMPELTURBO_SUPPORT_EMAIL || '').trim()
+  const sendConfirmation = parseBool(process.env.SEND_CONTACT_CONFIRMATION ?? 'true')
+
+  if (!from) {
+    return NextResponse.json({ ok: false, error: 'RESEND_FROM fehlt' }, { status: 500 })
+  }
+  if (!toInternal) {
+    return NextResponse.json({ ok: false, error: 'CONTACT_TO fehlt' }, { status: 500 })
+  }
+
   try {
     const fd = await req.formData()
+
+    // optional: honeypot (wenn du später im Formular ein hidden "website" ergänzt)
+    const hp = pickStr(fd, 'website') || pickStr(fd, 'company') || pickStr(fd, 'hp')
+    if (hp) {
+      if (wantsHtmlRedirect(req)) {
+        const url = new URL('/danke', req.url)
+        url.searchParams.set('sent', '1')
+        url.searchParams.set('src', 'kontakt')
+        return NextResponse.redirect(url, { status: 303 })
+      }
+      return NextResponse.json({ ok: true }, { status: 200 })
+    }
 
     // Pflichtfelder
     const firstName = pickStr(fd, 'firstName')
@@ -98,17 +116,13 @@ export async function POST(req: Request) {
     const location = pickStr(fd, 'location')
     const message = pickStr(fd, 'message')
     const source = pickStr(fd, 'source') || 'kontakt'
-    const customerType = normalizeCustomerType(pickStr(fd, 'customerType')) // optional (falls du später ergänzt)
 
     if (email && !isEmailLike(email)) {
       return NextResponse.json({ ok: false, error: 'E-Mail ist ungültig.' }, { status: 400 })
     }
 
-    const origin = req.headers.get('origin') || ''
-    const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || origin || 'https://ruempelturbo.de').trim()
-
-    const ctx = {
-      customerType: customerType ?? 'privat', // default
+    const ctx: InquiryCtx = {
+      customerType: 'privat', // Kontaktformular hat keinen Privat/Gewerbe Toggle → default
       source,
       firstName,
       lastName,
@@ -116,22 +130,20 @@ export async function POST(req: Request) {
       email: email || undefined,
       location: location || undefined,
       message: message || undefined,
-      siteUrl,
+      siteUrl: getSiteUrl(req),
     }
 
-    const from = process.env.MAIL_FROM || `${'RümpelTurbo'} <${RUEMPELTURBO_SUPPORT_EMAIL}>`
-
-    // 1) Interne Mail (immer)
+    // 1) Intern (immer)
     await sendWithResend({
       from,
-      to: RUEMPELTURBO_SUPPORT_EMAIL,
+      to: toInternal,
       subject: getRuempelTurboInternalSubject(ctx),
       html: renderRuempelTurboInternalMail(ctx),
       replyTo: email || undefined,
     })
 
-    // 2) Kunden-Mail (nur wenn E-Mail vorhanden)
-    if (email) {
+    // 2) Kunden-Mail (nur wenn E-Mail vorhanden + env erlaubt)
+    if (sendConfirmation && email) {
       await sendWithResend({
         from,
         to: email,
@@ -140,7 +152,7 @@ export async function POST(req: Request) {
       })
     }
 
-    // Klassisches <form action="..."> → Redirect
+    // Klassisches <form> → Redirect auf Danke
     if (wantsHtmlRedirect(req)) {
       const url = new URL('/danke', req.url)
       url.searchParams.set('sent', '1')
@@ -148,10 +160,11 @@ export async function POST(req: Request) {
       return NextResponse.redirect(url, { status: 303 })
     }
 
-    // fetch/json
-    return NextResponse.json({ ok: true })
-  } catch (e) {
-    const msg = e instanceof Error ? e.message : 'Unknown error'
-    return NextResponse.json({ ok: false, error: msg }, { status: 500 })
+    return NextResponse.json({ ok: true }, { status: 200 })
+  } catch (e: any) {
+    return NextResponse.json(
+      { ok: false, error: 'Mail send failed.', details: String(e?.message || e) },
+      { status: 500 }
+    )
   }
 }

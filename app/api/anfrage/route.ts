@@ -8,12 +8,13 @@ import {
   getRuempelTurboInternalSubject,
   RUEMPELTURBO_SUPPORT_EMAIL,
   type InquiryCtx,
+  type InquiryCustomerType,
 } from '@/app/mails/emailTemplates'
 
 export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
 
 function isValidEmail(email: string) {
-  // bewusst simple (und robust) Validierung
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
 }
 
@@ -24,6 +25,16 @@ function normalizePhone(phone: string) {
 function pickString(v: unknown) {
   if (typeof v === 'string') return v.trim()
   return ''
+}
+
+function parseBool(v: unknown) {
+  return v === true || v === 'true' || v === 'on' || v === '1' || v === 1
+}
+
+function normalizeCustomerType(v: unknown): InquiryCustomerType | undefined {
+  const x = pickString(v).toLowerCase()
+  if (x === 'privat' || x === 'gewerbe') return x
+  return undefined
 }
 
 async function readBody(req: Request): Promise<Record<string, unknown>> {
@@ -50,39 +61,44 @@ export async function POST(req: Request) {
   const resendKey = process.env.RESEND_API_KEY
   const from = process.env.RESEND_FROM
 
+  // optional: intern an ENV statt hardcoded
+  const toInternal = (process.env.CONTACT_TO || RUEMPELTURBO_SUPPORT_EMAIL || '').trim()
+
+  // optional: Kundenbestätigung per ENV abschaltbar
+  const sendConfirmation = parseBool(process.env.SEND_CONTACT_CONFIRMATION ?? 'true')
+
   if (!resendKey || !from) {
     return NextResponse.json(
       { ok: false, error: 'Server mail config missing (RESEND_API_KEY / RESEND_FROM).' },
       { status: 500 }
     )
   }
+  if (!toInternal) {
+    return NextResponse.json({ ok: false, error: 'CONTACT_TO missing.' }, { status: 500 })
+  }
 
   const body = await readBody(req)
 
   // Honeypot (Spambots)
-  const hp = pickString(body.website || body.company || body.hp)
+  const hp = pickString((body as any).website || (body as any).company || (body as any).hp)
   if (hp) {
-    return NextResponse.json({ ok: true }, { status: 200 })
+    return NextResponse.json({ ok: true, sentCustomer: false }, { status: 200 })
   }
 
-  const firstName = pickString(body.firstName)
-  const lastName = pickString(body.lastName)
-  const phone = normalizePhone(pickString(body.phone))
-  const emailRaw = pickString(body.email)
+  const customerType = normalizeCustomerType((body as any).customerType) // ✅ jetzt korrekt typisiert
+  const firstName = pickString((body as any).firstName)
+  const lastName = pickString((body as any).lastName)
+  const phone = normalizePhone(pickString((body as any).phone))
+  const emailRaw = pickString((body as any).email)
   const email = emailRaw ? emailRaw.toLowerCase() : ''
-  const location = pickString(body.location)
-  const message = pickString(body.message)
+  const location = pickString((body as any).location)
+  const message = pickString((body as any).message)
 
-  const dsgvoRaw = body.dsgvo
-  const dsgvo =
-    dsgvoRaw === true ||
-    dsgvoRaw === 'true' ||
-    dsgvoRaw === 'on' ||
-    dsgvoRaw === '1' ||
-    dsgvoRaw === 1
+  const dsgvo = parseBool((body as any).dsgvo)
 
   // Pflichtfelder
   const errors: Record<string, string> = {}
+  if (!customerType) errors.customerType = 'Bitte Privat oder Gewerbe auswählen.'
   if (!firstName) errors.firstName = 'Vorname ist Pflicht.'
   if (!lastName) errors.lastName = 'Nachname ist Pflicht.'
   if (!phone) errors.phone = 'Telefonnummer ist Pflicht.'
@@ -97,13 +113,15 @@ export async function POST(req: Request) {
   }
 
   const ctx: InquiryCtx = {
+    customerType, // ✅ kein "" mehr → TS OK
+    source: 'anfrage',
     firstName,
     lastName,
     phone,
     email: email || undefined,
     location: location || undefined,
     message: message || undefined,
-    siteUrl: req.headers.get('origin') || 'https://ruempelturbo.de',
+    siteUrl: req.headers.get('origin') || process.env.NEXT_PUBLIC_SITE_URL || 'https://ruempelturbo.de',
   }
 
   const resend = new Resend(resendKey)
@@ -112,15 +130,15 @@ export async function POST(req: Request) {
     // 1) Intern
     await resend.emails.send({
       from,
-      to: [RUEMPELTURBO_SUPPORT_EMAIL],
+      to: [toInternal],
       subject: getRuempelTurboInternalSubject(ctx),
       html: renderRuempelTurboInternalMail(ctx),
-      replyTo: email ? email : undefined, // wenn vorhanden
+      replyTo: email ? email : undefined,
     })
 
-    // 2) Customer confirmation (nur wenn email vorhanden)
+    // 2) Customer confirmation (nur wenn email vorhanden + env erlaubt)
     let sentCustomer = false
-    if (email) {
+    if (sendConfirmation && email) {
       await resend.emails.send({
         from,
         to: [email],
