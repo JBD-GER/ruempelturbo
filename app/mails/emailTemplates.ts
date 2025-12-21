@@ -290,7 +290,6 @@ export function getRuempelTurboInternalSubject(ctx: InquiryCtx) {
 
 export function renderRuempelTurboCustomerMail(ctx: InquiryCtx) {
   const fullName = `${ctx.firstName} ${ctx.lastName}`.trim()
-  const base = normalizeSiteUrl(ctx.siteUrl)
 
   const companyTel = (BRAND.phone || '').trim()
   const companyTelLink = companyTel ? companyTel.replace(/\s+/g, '') : ''
@@ -304,8 +303,6 @@ export function renderRuempelTurboCustomerMail(ctx: InquiryCtx) {
           ? `<a href="tel:${escapeHtml(companyTelLink)}" style="color:${BRAND.text};text-decoration:underline;">${escapeHtml(companyTel)}</a>.`
           : `<b>${escapeHtml(BRAND.name)}</b>.`)
     )}
-
-    ${ctaButton(`${base}#anfrage`, 'Anfrage ergänzen (Fotos/Details)')}
 
     ${divider()}
     ${sectionTitle('Ihre Angaben')}
@@ -350,8 +347,8 @@ export function renderRuempelTurboCustomerMail(ctx: InquiryCtx) {
 
     ${divider()}
     ${p(
-      `Tipp: Wenn Sie Fotos/Video senden möchten, antworten Sie einfach auf diese E-Mail ` +
-        `oder schicken Sie die Bilder per WhatsApp (falls Sie das nutzen).`
+      `Tipp: Wenn Sie Fotos/Video senden möchten, schicken Sie uns einfach eine Mail an:` +
+        `info@ruempelturbo.de`
     )}
   `
 
