@@ -262,7 +262,7 @@ export default function Home() {
                   backgroundImage: `linear-gradient(90deg, ${BRAND.accent}, ${BRAND.ink})`,
                 }}
               >
-                richtig schnell
+                richtig schnell.
               </span>{' '}
               geht.
             </h1>
