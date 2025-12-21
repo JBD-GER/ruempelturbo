@@ -1,6 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
+import { useRouter } from 'next/navigation'
 
 const BRAND = {
   name: 'RümpelTurbo',
@@ -29,6 +30,8 @@ export default function ContactForm({
   title = 'Kostenlos anfragen',
   subtitle = 'Pflicht: Vorname, Nachname, Telefonnummer, DSGVO. E-Mail ist optional.',
 }: Props) {
+  const router = useRouter()
+
   const hintBadges = useMemo(
     () => ['✅ Rückmeldung i. d. R. schnell', '✅ Fixpreis möglich (nach Fotos/Begehung)', '✅ Besenrein optional'],
     []
@@ -64,8 +67,14 @@ export default function ContactForm({
       if (!res.ok || data?.ok === false) {
         setErr((data || { ok: false, error: 'Konnte nicht gesendet werden.' }) as ApiErr)
       } else {
-        setOk((data || { ok: true }) as ApiOk)
+        const okData = (data || { ok: true }) as ApiOk
+        setOk(okData)
         form.reset()
+
+        // ✅ Weiterleitung auf Danke (mit optionalen Infos)
+        const mail = okData.sentCustomer ? '1' : '0'
+        const src = encodeURIComponent(source || 'kontakt')
+        router.replace(`/danke?src=${src}&mail=${mail}`)
       }
     } catch (e: any) {
       setErr({ ok: false, error: 'Netzwerkfehler', details: String(e?.message || e) })
@@ -128,9 +137,7 @@ export default function ContactForm({
             {err.errors && Object.keys(err.errors).length > 0 && (
               <ul className="mt-2 list-disc pl-5 text-xs text-rose-900/90">
                 {Object.entries(err.errors).map(([k, v]) => (
-                  <li key={k}>
-                    {v} {k === 'dsgvo' ? '' : ''}
-                  </li>
+                  <li key={k}>{v}</li>
                 ))}
               </ul>
             )}

@@ -2,6 +2,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
+import { useRouter } from 'next/navigation'
 
 const ACCENT = '#f9a727'
 
@@ -20,6 +21,8 @@ type ApiOk = {
 type CustomerType = 'privat' | 'gewerbe' | ''
 
 export default function InquiryForm() {
+  const router = useRouter()
+
   const [loading, setLoading] = useState(false)
   const [ok, setOk] = useState<ApiOk | null>(null)
   const [err, setErr] = useState<ApiErr | null>(null)
@@ -66,7 +69,9 @@ export default function InquiryForm() {
       if (!res.ok || (data as any).ok === false) {
         setErr(data as ApiErr)
       } else {
-        setOk(data as ApiOk)
+        const okData = data as ApiOk
+        setOk(okData)
+
         // reset
         setCustomerType('')
         setFirstName('')
@@ -77,6 +82,11 @@ export default function InquiryForm() {
         setMessage('')
         setDsgvo(false)
         setWebsite('')
+
+        // ✅ Weiterleitung auf Danke (mit optionalen Infos)
+        const typ = encodeURIComponent(customerType || '')
+        const mail = okData.sentCustomer ? '1' : '0'
+        router.replace(`/danke?typ=${typ}&mail=${mail}`)
       }
     } catch (e: any) {
       setErr({ ok: false, error: 'Netzwerkfehler', details: String(e?.message || e) })
@@ -129,6 +139,7 @@ export default function InquiryForm() {
           </span>
         </div>
 
+        {/* optional: success-box (wird durch redirect meist nicht sichtbar, schadet aber nicht) */}
         {ok && (
           <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
             <div className="font-semibold">✅ Anfrage erfolgreich gesendet.</div>

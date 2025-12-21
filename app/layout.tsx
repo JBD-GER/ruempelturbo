@@ -6,6 +6,7 @@ import './globals.css'
 import Header from './components/Header'
 import Footer from './components/Footer'
 import ConsentBanner from './components/ConsentBanner'
+import GtagAds from './components/GtagAds'
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -98,6 +99,7 @@ export default function RootLayout({
         {/* ✅ Global Footer */}
         <Footer />
         <ConsentBanner />
+        <GtagAds />
       </body>
     </html>
   )

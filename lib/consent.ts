@@ -9,6 +9,8 @@ export type Consent = {
 const KEY = 'rt_consent_v1'
 const VERSION = 1
 
+export const CONSENT_EVENT = 'rt:consent-updated'
+
 function safeJsonParse<T>(s: string | null): T | null {
   if (!s) return null
   try {
@@ -41,13 +43,16 @@ export function writeConsent(input: { analytics: boolean; marketing: boolean }) 
 
   window.localStorage.setItem(KEY, JSON.stringify(data))
 
-  // Optional: Mini-Cookie als "Marker" (z.B. für Server/Edge Checks)
-  // Enthält KEINE Details, nur "gesetzt"
+  // Optional: Mini-Cookie als "Marker"
   document.cookie = `rt_consent=1; Path=/; Max-Age=${60 * 60 * 24 * 365}; SameSite=Lax`
+
+  // ✅ Broadcast an die App
+  window.dispatchEvent(new CustomEvent(CONSENT_EVENT, { detail: data }))
 }
 
 export function clearConsent() {
   if (typeof window === 'undefined') return
   window.localStorage.removeItem(KEY)
   document.cookie = `rt_consent=; Path=/; Max-Age=0; SameSite=Lax`
+  window.dispatchEvent(new CustomEvent(CONSENT_EVENT, { detail: null }))
 }
