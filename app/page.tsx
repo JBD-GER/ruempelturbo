@@ -274,7 +274,7 @@ export default function Home() {
             </p>
 
             <div className="mt-4 flex flex-wrap items-center gap-2">
-              <Pill>⚡ Schnell • Oft 24–72h</Pill>
+              <Pill>⚡ Komplette Haushaltsauflösung</Pill>
               <Pill>💬 Fixpreis möglich</Pill>
               <Pill>🧹 Besenrein • optional Reinigung</Pill>
               <Pill>♻️ Entsorgung inkl.</Pill>
