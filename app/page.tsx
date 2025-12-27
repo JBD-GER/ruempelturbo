@@ -111,7 +111,7 @@ const PRICING = [
     items: ['Demontage möglich', 'Besenrein optional', 'Fixpreis nach Fotos/Begehung'],
   },
   {
-    title: 'Haus / Komplettobjekt',
+    title: 'Komplette Haushaltsauflösung',
     price: 'ab 999 €',
     note: 'größere Mengen & mehrere Etagen',
     items: ['Team vor Ort', 'schnelle Durchführung', 'Übergabe planbar'],
@@ -322,10 +322,6 @@ export default function Home() {
               </a>
             </div>
 
-            <p className="mt-4 text-xs text-zinc-500">
-              Hinweis: Region/Ort bitte im Formular angeben (PLZ). Inhalte für SEO sind vorbereitet – Ort(e) können Sie
-              später gezielt ergänzen.
-            </p>
           </div>
 
           {/* Right: Form */}
